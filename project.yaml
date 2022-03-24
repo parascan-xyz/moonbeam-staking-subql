@@ -1,0 +1,29 @@
+specVersion: 0.2.0
+name: moonbeam-staking
+version: 1.0.0
+description: ""
+repository: ""
+schema:
+  file: ./schema.graphql
+network:
+  endpoint: wss://moonbeam.api.onfinality.io/public-ws
+  genesisHash: "0xfe58ea77779b7abda7da4ec526d14db9b1e9cd40a217c34892af80a9b332b76d"
+  dictionary: "https://api.subquery.network/sq/subquery/moonbeam-dictionary"
+dataSources:
+  - kind: substrate/Runtime
+    startBlock: 1
+    mapping:
+      file: ./dist/index.js
+      handlers:
+        - handler: handleBlock
+          kind: substrate/BlockHandler
+        - handler: handleEvent
+          kind: substrate/EventHandler
+          filter:
+            module: parachainStaking
+        - handler: handleExtrinsic
+          kind: substrate/CallHandler
+          filter:
+            module: identity
+            method: setIdentity
+            success: true

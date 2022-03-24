@@ -1,0 +1,39 @@
+type Block @entity {
+  id: ID!
+  author: String
+}
+
+type Identity @entity {
+  id: ID!
+  display: String
+  args: String
+}
+
+type Reward @entity {
+  id: ID!
+  blockNumber: Int! @index(unique: false)
+  eventIdx: Int!
+  account: String!
+  value: BigInt!
+  timestamp: Date!
+}
+
+type Delegation @entity {
+  id: ID!
+  delegator: Delegator
+  candidate: Candidate
+  value: BigInt! @index(unique: false)
+}
+
+type Candidate @entity {
+  id: ID!
+  joined: Date
+  isChosen: Boolean
+  delegations: [Delegation] @derivedFrom(field: "candidate")
+  selfBonded: BigInt!
+}
+
+type Delegator @entity {
+  id: ID!
+  delegations: [Delegation] @derivedFrom(field: "delegator")
+}
