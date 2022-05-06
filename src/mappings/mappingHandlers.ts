@@ -48,17 +48,17 @@ dispatch.batchRegist([
 
 export async function handleBlock(block: SubstrateBlock): Promise<void> {
   const blockNumber = block.block.header.number.toNumber();
-  //const validators = await api.query.session.validators();
-  //type CP = Array<{owner: string; amount: bigint}
-  //const selectedCandidates = api.query.parachainStaking.selectedCandidates()
-  const candidatePool = JSON.parse(
-    (await api.query.parachainStaking.candidatePool()).toString()
-  );
-  const validators = candidatePool.map((x) => x.owner);
-  const author = extractAuthor(block.block.header.digest, validators);
+  type authorType = {account: string, deposit: bigint};
+  let author: unknown
+  const hasConsensusDigest = block.block.header.digest.logs[0]?.isConsensus && block.block.header.digest.logs[0]?.asConsensus[1]
+  if (hasConsensusDigest) {
+    author = (await api.query.authorMapping.mappingWithDeposit(block.block.header.digest.logs[0].asConsensus[1])).toHuman()
+  } else {
+    author = (await api.query.authorMapping.mappingWithDeposit(block.block.header.digest.logs[0].asPreRuntime[1])).toHuman()
+  }
   const entity = Block.create({
     id: blockNumber.toString(),
-    author: author?.toString(),
+    author: (author as authorType).account,
   });
   await entity.save();
 }
