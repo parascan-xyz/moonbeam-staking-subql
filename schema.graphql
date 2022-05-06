@@ -1,6 +1,11 @@
 type Block @entity {
   id: ID!
-  author: String
+  author: Author
+}
+
+type Author @entity {
+  id: ID!
+  blocks: [Block] @derivedFrom(field: "author")
 }
 
 type Identity @entity {

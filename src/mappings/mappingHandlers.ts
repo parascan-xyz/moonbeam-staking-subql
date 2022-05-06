@@ -3,8 +3,7 @@ import {
   SubstrateBlock,
   SubstrateExtrinsic,
 } from "@subql/types";
-import { extractAuthor } from "@polkadot/api-derive/type/util";
-import { Block, Identity } from "../types";
+import { Author, Block, Identity } from "../types";
 import { Dispatcher } from "../handlers/dispatcher";
 import {
   changeSelfBonded,
@@ -46,19 +45,30 @@ dispatch.batchRegist([
   { key: "Rewarded", handler: createReward },
 ]);
 
+async function ensureAuthor(recordId: string): Promise<Author> {
+  recordId = recordId.toLowerCase();
+  let entity = await Author.get(recordId);
+  if (!entity) {
+    entity = new Author(recordId);
+    await entity.save();
+  }
+  return entity;
+}
+
 export async function handleBlock(block: SubstrateBlock): Promise<void> {
   const blockNumber = block.block.header.number.toNumber();
   type authorType = {account: string, deposit: bigint};
-  let author: unknown
+  let authorUnknown: unknown
   const hasConsensusDigest = block.block.header.digest.logs[0]?.isConsensus && block.block.header.digest.logs[0]?.asConsensus[1]
   if (hasConsensusDigest) {
-    author = (await api.query.authorMapping.mappingWithDeposit(block.block.header.digest.logs[0].asConsensus[1])).toHuman()
+    authorUnknown = (await api.query.authorMapping.mappingWithDeposit(block.block.header.digest.logs[0].asConsensus[1])).toHuman()
   } else {
-    author = (await api.query.authorMapping.mappingWithDeposit(block.block.header.digest.logs[0].asPreRuntime[1])).toHuman()
+    authorUnknown = (await api.query.authorMapping.mappingWithDeposit(block.block.header.digest.logs[0].asPreRuntime[1])).toHuman()
   }
+  const author = await ensureAuthor((authorUnknown as authorType).account)
   const entity = Block.create({
     id: blockNumber.toString(),
-    author: (author as authorType).account,
+    authorId: author.id,
   });
   await entity.save();
 }
